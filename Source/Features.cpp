@@ -15,9 +15,57 @@ static LPCSTR weaponNames[] = {
 };
 
 int rgb_rainbow_red = 255, rgb_rainbow_green, rgb_rainbow_blue;
-int MoneyDropDelay = GetTickCount(), autoMoney_Delay = GetTickCount();
+
+void Features::teleport_to_waypoint(Ped player) {
+	int WaypointHandle = UI::GET_FIRST_BLIP_INFO_ID(8);
+	if (UI::DOES_BLIP_EXIST(WaypointHandle))
+	{
+		Vector3 WaypointPos = UI::GET_BLIP_COORDS(WaypointHandle);
+		int Handle = player;
+		if (PED::IS_PED_IN_ANY_VEHICLE(Handle, 0))
+			Handle = PED::GET_VEHICLE_PED_IS_IN(Handle, 0);
+		ENTITY::SET_ENTITY_COORDS(Handle, WaypointPos.x, WaypointPos.y, WaypointPos.z, 0, 0, 0, 1);
+	}
+	else
+		notifyAboveMap("~HUD_COLOUR_RED~Error! ~HUD_COLOUR_WHITE~Waypoint not found");
+}
+
+void Features::teleport_to_nearest_veh(Ped player) {
+	Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, 0.0f);
+	int VehicleHandle = VEHICLE::GET_CLOSEST_VEHICLE(coords.x, coords.y, coords.z, 100.0, 0, 71);
+	int freeSeat;
+	for (int i = -1; i < 6; i++)
+		if (VEHICLE::IS_VEHICLE_SEAT_FREE(VehicleHandle, i)) {
+			freeSeat = i;
+			break;
+		}
+	PED::SET_PED_INTO_VEHICLE(player, VehicleHandle, freeSeat);
+}
+
+void Features::teleport_entity_to(Ped player, Ped playerTarget) {
+	if (PED::IS_PED_IN_ANY_VEHICLE(playerTarget, 0))
+	{
+		int VehicleHandle = PED::GET_VEHICLE_PED_IS_USING(playerTarget);
+		int freeSeat;
+		for (int i = -1; i < 6; i++)
+			if (VEHICLE::IS_VEHICLE_SEAT_FREE(VehicleHandle, i)) {
+				freeSeat = i;
+				break;
+			}
+		PED::SET_PED_INTO_VEHICLE(player, VehicleHandle, freeSeat);
+		return;
+	}
+	Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, 0.0f);
+	teleport_to_coords(player, coords);
+}
+
+void Features::explode_player(Ped player) {
+	Vector3 Position = ENTITY::GET_ENTITY_COORDS(player, 1);
+	FIRE::ADD_EXPLOSION(Position.x, Position.y, Position.z, 37, 2.5f, true, false, 3.0f);
+}
 
 void Features::apply_vehicle_mod(Vehicle veh, int modtype, int modindex) {
+	VEHICLE::SET_VEHICLE_MOD_KIT(veh, 0);
 	VEHICLE::SET_VEHICLE_MOD(veh, modtype, modindex, true);
 }
 
@@ -26,23 +74,15 @@ void Features::money_bank() {
 }
 
 void Features::money_ammo(Ped player, bool toggle) {
-	if (ENTITY::DOES_ENTITY_EXIST(player) && PED::IS_PED_SHOOTING(player))
-	{
-		float Tmp[6];
-		WEAPON::GET_PED_LAST_WEAPON_IMPACT_COORD(player, (Vector3*)Tmp);
-		if (Tmp[0] != 0 || Tmp[2] != 0 || Tmp[4] != 0) {
-
-			uint model_hash = $("prop_money_bag_01");
-
-			if (!STREAMING::IS_MODEL_VALID(model_hash))
-				return;
-
-			while (!STREAMING::HAS_MODEL_LOADED(model_hash))
-				WAIT(0);
-
-			if (STREAMING::HAS_MODEL_LOADED(model_hash)) {
-				OBJECT::CREATE_AMBIENT_PICKUP($("PICKUP_MONEY_CASE"), Tmp[0], Tmp[2], Tmp[4], 0, rand() % 10000, $("Prop_weed_01"), FALSE, TRUE);
-				STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED($("Prop_weed_01"));
+	if (ENTITY::DOES_ENTITY_EXIST(player) && toggle) {
+		if (PED::IS_PED_SHOOTING(player)) {
+			float Tmp[6];
+			WEAPON::GET_PED_LAST_WEAPON_IMPACT_COORD(player, (Vector3*)Tmp);
+			if (Tmp[0] != 0 || Tmp[2] != 0 || Tmp[4] != 0) {
+				STREAMING::REQUEST_MODEL($("prop_gold_bar"));
+				while (!STREAMING::HAS_MODEL_LOADED($("prop_gold_bar")))WAIT(0); {
+					OBJECT::CREATE_AMBIENT_PICKUP($("PICKUP_MONEY_MED_BAG"), Tmp[0], Tmp[2], Tmp[4], 0, 5000, $("prop_gold_bar"), FALSE, TRUE);
+					STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED($("prop_gold_bar")); }
 			}
 		}
 	}
@@ -55,45 +95,16 @@ void Features::weapon_damage_modifier(Ped player, bool toggle) {
 		PLAYER::SET_PLAYER_WEAPON_DAMAGE_MODIFIER(player, 1.0f);
 }
 
-void Features::auto_money(Ped player, int amount, int delay) {
-	if (ENTITY::DOES_ENTITY_EXIST(player) && GetTickCount() - MoneyDropDelay > delay) {
+void Features::money_drop(Ped player, int amount) {
+	if (ENTITY::DOES_ENTITY_EXIST(player)) {
+		Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, 1.25f);
 
-		Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, 0.0f);
-		Ped pedTarget;
-		PED::GET_CLOSEST_PED(coords.x, coords.y, coords.z, 999999999, 1, 0, &pedTarget, TRUE, TRUE, -1);
-		if (!PED::IS_PED_A_PLAYER(pedTarget) && ENTITY::DOES_ENTITY_EXIST(pedTarget) && !ENTITY::IS_ENTITY_IN_WATER(pedTarget)) {
-			Vector3 targetCoords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(pedTarget, 0.0f, 0.0f, 0.0f);
-
-			if (targetCoords.z < 1)
-				return;
-
-			teleport_to_coords(player, targetCoords);
-			PED::SET_PED_MONEY(pedTarget, amount);
-			ENTITY::SET_ENTITY_HEALTH(pedTarget, 0);
-			ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&pedTarget);
-			autoMoney_Delay = GetTickCount();
+		STREAMING::REQUEST_MODEL($("prop_money_bag_01"));
+		while (!STREAMING::HAS_MODEL_LOADED($("prop_money_bag_01")))WAIT(0); {
+			OBJECT::CREATE_AMBIENT_PICKUP($("PICKUP_MONEY_MED_BAG"), coords.x, coords.y, coords.z, 0, amount, $("prop_money_bag_01"), FALSE, TRUE);
+			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED($("prop_money_bag_01")); }
 		}
 	}
-}
-
-void Features::money_drop(Ped player, int amount, int delay) {
-	if (ENTITY::DOES_ENTITY_EXIST(player) && GetTickCount() - MoneyDropDelay > delay) {
-		Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, 0.0f);
-		uint model_hash = $("prop_money_bag_01");
-
-		if (!STREAMING::IS_MODEL_VALID(model_hash))
-			return;
-
-		while (!STREAMING::HAS_MODEL_LOADED(model_hash))
-			WAIT(0);
-
-		if (STREAMING::HAS_MODEL_LOADED(model_hash)) {
-			OBJECT::CREATE_AMBIENT_PICKUP($("PICKUP_MONEY_CASE"), coords.x , coords.y, coords.z, 0, amount, model_hash, false, true);
-			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(model_hash);
-			MoneyDropDelay = GetTickCount();
-		}
-	}
-}
 
 void Features::color_loop(Vehicle VehicleHandle, bool toggle) {
 	if (toggle) {
@@ -176,7 +187,7 @@ void Features::Max_veh(Vehicle VehicleHandle) {
 	VEHICLE::_SET_VEHICLE_NEON_LIGHT_ENABLED(VehicleHandle, 3, 1);
 	VEHICLE::_SET_VEHICLE_NEON_LIGHTS_COLOUR(VehicleHandle, rand() % 255, rand() % 255, rand() % 255);
 	VEHICLE::SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(VehicleHandle, 6);
-	VEHICLE::SET_VEHICLE_NUMBER_PLATE_TEXT(VehicleHandle, "Kryooth");
+	VEHICLE::SET_VEHICLE_NUMBER_PLATE_TEXT(VehicleHandle, "champion");
 	
 }
 
@@ -768,10 +779,7 @@ void Features::unlock_explusive_shirts() {
 
 void Features::unlock_redidsign_character1() {
 	STATS::STAT_SET_BOOL($("MP0_FM_CHANGECHAR_ASKED"), 0, 1);
-}
-
-void Features::unlock_redidsign_character2() {
-	STATS::STAT_SET_BOOL($("MP1_FM_CHANGECHAR_ASKED"), 0, 1);
+	
 }
 
 void Features::unlock_skip_tuto() {

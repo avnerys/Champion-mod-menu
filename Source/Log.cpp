@@ -29,11 +29,11 @@ void Log::Init(HMODULE hModule) {
 
 		localtime_s(&current_tm, &current_time);
 		sprintf_s(szTimestamp, "[%02d:%02d:%02d] %%s\n", current_tm.tm_hour, current_tm.tm_min, current_tm.tm_sec);
-		sprintf_s(chLogBuff, szTimestamp, "INIT: SudoMod");
+		sprintf_s(chLogBuff, szTimestamp, "INIT: Champion");
 		if (slash != -1) {
 			g_logFile[slash + 1] = '\0';
 			strcpy_s(g_debugLogFile, g_logFile);
-			strcat_s(g_debugLogFile, "SudoMod.log");
+			strcat_s(g_debugLogFile, "Champion.log");
 			
 			FILE* file;
 			if ((fopen_s(&file, g_debugLogFile, "w")) == 0)
@@ -41,7 +41,7 @@ void Log::Init(HMODULE hModule) {
 				fprintf_s(file, "%s", chLogBuff);
 				fclose(file);
 			}
-			OutputDebugStringA("INIT: SudoMod");
+			OutputDebugStringA("INIT: Champion");
 		}
 		else {
 			useFileOutput = false;

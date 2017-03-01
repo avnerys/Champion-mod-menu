@@ -22,7 +22,6 @@ public:
 	static void Features::unlock_chromerims();
 	static void Features::unlock_explusive_shirts();
 	static void Features::unlock_redidsign_character1();
-	static void Features::unlock_redidsign_character2();
 	static void Features::unlock_skip_tuto();
 	static void Features::unlock_trophies();
 	static void Features::unlock_hairstyle();
@@ -48,6 +47,9 @@ public:
 	static void Features::set_plate_type(Vehicle veh, int index);
 
 	static void Features::teleport_to_objective();
+	static void Features::teleport_entity_to(Ped player, Ped playerTarget);
+	static void Features::teleport_to_nearest_veh(Ped player);
+	static void Features::teleport_to_waypoint(Ped player);
 
 	static void Features::give_weap(Ped player);
 	static void Features::explosive_ammo(Player player, bool toggle);
@@ -55,9 +57,9 @@ public:
 	static void Features::no_reload(Ped player, bool toggle);
 	static void Features::weapon_damage_modifier(Ped player, bool toggle);
 	static void Features::money_ammo(Ped player, bool toggle);
+	static void Features::explode_player(Ped player);
 
-	static void Features::money_drop(Ped player, int amount, int delay);
-	static void Features::auto_money(Ped player, int amount, int delay);
+	static void Features::money_drop(Ped player, int amount);
 	static void Features::money_bank();
 
 	static void Features::apply_vehicle_mod(Vehicle veh, int modtype, int modindex);
