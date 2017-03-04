@@ -55,7 +55,7 @@ public:
 	static void Features::explosive_ammo(Player player, bool toggle);
 	static void Features::fire_ammo(Player player, bool toggle);
 	static void Features::no_reload(Ped player, bool toggle);
-	static void Features::weapon_damage_modifier(Ped player, bool toggle);
+	static void Features::weapon_damage_modifier(Player player, bool toggle);
 	static void Features::money_ammo(Ped player, bool toggle);
 	static void Features::explode_player(Ped player);
 
@@ -63,4 +63,6 @@ public:
 	static void Features::money_bank();
 
 	static void Features::apply_vehicle_mod(Vehicle veh, int modtype, int modindex);
+
+
 };

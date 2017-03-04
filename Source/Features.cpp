@@ -88,7 +88,7 @@ void Features::money_ammo(Ped player, bool toggle) {
 	}
 }
 
-void Features::weapon_damage_modifier(Ped player, bool toggle) {
+void Features::weapon_damage_modifier(Player player, bool toggle) {
 	if (ENTITY::DOES_ENTITY_EXIST(player) && toggle) 
 		PLAYER::SET_PLAYER_WEAPON_DAMAGE_MODIFIER(player, 999999999999.9f);
 	else if (ENTITY::DOES_ENTITY_EXIST(player) && !toggle)
@@ -127,6 +127,7 @@ void Features::color_loop(Vehicle VehicleHandle, bool toggle) {
 		VEHICLE::SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(VehicleHandle, rgb_rainbow_red, rgb_rainbow_green, rgb_rainbow_blue);
 		VEHICLE::SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(VehicleHandle, rgb_rainbow_red, rgb_rainbow_green, rgb_rainbow_blue);
 		VEHICLE::_SET_VEHICLE_NEON_LIGHTS_COLOUR(VehicleHandle, rgb_rainbow_red, rgb_rainbow_green, rgb_rainbow_blue);
+		VEHICLE::SET_VEHICLE_TYRE_SMOKE_COLOR(VehicleHandle, rgb_rainbow_red, rgb_rainbow_green, rgb_rainbow_blue);
 	}
 }
 

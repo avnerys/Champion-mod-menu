@@ -71,15 +71,11 @@ bool Native(DWORD64 hash, LPVOID hookFunction, T** trampoline)
 	return false;
 }
 
-static int lastFrame = 0;
 Hooking::NativeHandler ORIG_GET_FRAME_COUNT = NULL;
 void* __cdecl MY_GET_FRAME_COUNT(NativeContext *cxt)
 {
-	int thisFrame = cxt->GetArgument<int>(0);
-	if (thisFrame != lastFrame) {
-		lastFrame = thisFrame;
-		Hooking::onTickInit();
-	}	ORIG_GET_FRAME_COUNT(cxt);
+	Hooking::onTickInit();
+	ORIG_GET_FRAME_COUNT(cxt);
 
 	return cxt;
 }

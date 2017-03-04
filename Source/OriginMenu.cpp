@@ -47,10 +47,10 @@ teleportation_place Places[] = {
 	{ "Underwater Hatch", 4273.950f, 2975.714f, -170.746f },
 	{ "Underwater UFO", 762.426f, 7380.371f, -111.377f },
 	{ "Windmill Top", 2026.677f, 1842.684f, 133.313f },
-	{ "Ammunation",-318.859039f, 6074.433105f, 30.614943f},
-	{ "Tattoo", -285.910400f, 6202.941895f, 30.626459f},
-	{ "Barber shop", -286.639038f, 6239.389648f, 30.567659f},
-	{ "Clothes shop", -4.509100f, 6521.252930f, 30.571024f}
+	{ "Ammunation",-318.859039f, 6074.433105f, 30.614943f },
+	{ "Tattoo", -285.910400f, 6202.941895f, 30.626459f },
+	{ "Barber shop", -286.639038f, 6239.389648f, 30.567659f },
+	{ "Clothes shop", -4.509100f, 6521.252930f, 30.571024f }
 };
 
 LPCSTR vehiculeModels[63][10] = {
@@ -180,7 +180,7 @@ LPCSTR MoneyModelMenu[] = { "Gold bar", "Weed pallet", "Weed plantation", "Money
 
 LPCSTR platesTypes[] = { "Blue on white 1", "Yellow on black", "Yellow on blue", "Blue on white 2", "Blue on white 3", "North Yankton" };
 
-int colorTypesArray[2] = { 1, 3};
+int colorTypesArray[2] = { 1, 3 };
 
 int colorTypesIndex, colorTypesIndex1;
 
@@ -331,10 +331,10 @@ LPCSTR pedModelNames[70][10] = {
 };
 
 typedef struct {									// here you put all data specific to a player you want to save, for exemple: bool godMod	
-	///-------------------------------------------BASIC INFO-------------------------------------------///
-	Ped player_ped;	
+													///-------------------------------------------BASIC INFO-------------------------------------------///
+	Ped player_ped;
 	int player_index;
-	char* player_name;								
+	char* player_name;
 	Player player;
 
 	///-------------------------------------------BOOLEANS-------------------------------------------///
@@ -404,27 +404,22 @@ int checkSelfPlayerIndex();
 void checkIfStillUpToDate();
 
 bool firstload = true;
-LPCWSTR menuStyleLocation = L".\\Champion\\champion.ini";
 
-player_data *self;		
+player_data *self;
 player_data lobby_players[32]; // array for every players in lobby
 
-void OriginMenu() 
+void OriginMenu()
 {
 	if (firstload) {
-		Menu::LoadMenuTheme(menuStyleLocation);
-		Log::Msg("Menu theme loaded");
 		notifyAboveMap("~HUD_COLOUR_RED~Avnerys's ~HUD_COLOUR_WHITE~Champion mod menu");
 		WAIT(375);
 		notifyAboveMap("~HUD_COLOUR_WHITE~Press [Insert] to open menu");
-		notifyAboveMap("~HUD_COLOUR_WHITE~MPGH and i aren't responsible of any ban");
-		notifyAboveMap("~HUD_COLOUR_WHITE~MPGH beta provided by xghostranger");
 		checkIfStillUpToDate();
 		firstload = false;
 	}
 
 	Menu::checkKeys();
-	
+
 	/*upadating players in session*/
 	for (int i = 0; i < 32; i++) {
 		lobby_players[i].player = PLAYER::INT_TO_PLAYERINDEX(i);
@@ -452,10 +447,8 @@ void OriginMenu()
 			Menu::MenuOption("Weapon", "weapon");
 			Menu::MenuOption("Teleportation", "teleportation");
 			Menu::MenuOption("Recovery", "recovery");
-			Menu::MenuOption("World", "world");
-			Menu::MenuOption("Menu", "menu_settings");
 		}
-	
+
 		if (Menu::currentMenu("weapon")) {
 			Menu::Title("Weapon");
 			if (Menu::Option("Give every weapon"))
@@ -470,10 +463,8 @@ void OriginMenu()
 
 		if (Menu::currentMenu("self")) {
 
-
 			Menu::Title("Self");
 
-			Menu::MenuOption("Skin", "skin");
 			if (Menu::BoolOption("God mod", &self->b_GodMod))
 				Features::toggle_GodMod(self->b_GodMod, self->player);
 			if (Menu::BoolOption("Invisibility", &self->b_Invisible))
@@ -486,37 +477,15 @@ void OriginMenu()
 				Features::teleport_to_nearest_veh(self->player_ped);
 		}
 
-		if (Menu::currentMenu("skin")) {
-
-			Menu::Title("Skin");
-
-		/*	if (Menu::Option("Reset skin"))
-				Features::reset_skin(self_ped);
-
-			for (int i = 0; i < 70; i++)
-			{
-				for (int j = 0; j < 10; j++)
-				{
-					LPCSTR name, nameID;
-					name = pedModelNames[i][j];
-					nameID = pedModels[i][j];
-
-					if (name != "" && nameID != "") {
-						if (Menu::Option((char*)name)) {
-							Features::set_skin(nameID);
-						}
-					}
-					else
-						break;
-				}
-			}*/
-		}
-
 		if (Menu::currentMenu("online")) {
 			Menu::Title("Online");
+			int host_index = NETWORK::NETWORK_GET_HOST_OF_SCRIPT("freemode", -1, 0);
 
 			for (int i = 0; i < 32; i++) {
-				Menu::MenuOption(lobby_players[i].player_name, lobby_players[i].player_name);
+				if (i == host_index)
+					Menu::MenuOption(Menu::StringToChar((std::string)lobby_players[i].player_name + " [HOST]"), lobby_players[i].player_name);
+				else
+					Menu::MenuOption(lobby_players[i].player_name, lobby_players[i].player_name);
 			}
 		}
 
@@ -543,10 +512,12 @@ void OriginMenu()
 					ENTITY::FREEZE_ENTITY_POSITION(current_player->player_ped, true);
 				if (Menu::Option("Unfreeze player"))
 					ENTITY::FREEZE_ENTITY_POSITION(current_player->player_ped, false);
+				if (self->player_index == NETWORK::NETWORK_GET_HOST_OF_SCRIPT("freemode", -1, 0))
+					if (Menu::Option("Kick player"))
+						NETWORK::NETWORK_SESSION_KICK_PLAYER(current_player->player);
 
 				Menu::Option("");
 
-				
 				Menu::Option("Money drop :");
 				Menu::BoolOption("Enable", &current_player->b_MoneyDrop);
 				Menu::IntOption("Delay", &current_player->i_MoneyDropDelay, 10, 5000, 10);
@@ -599,9 +570,9 @@ void OriginMenu()
 			Menu::IntOption("Amount", &self->i_MoneyDropAmount, 500, 40000, 500);
 			Menu::BoolOption("Enable session limit", &self->b_MoneyDropLimit);
 			Menu::IntOption("Money session limit", &self->i_MaxMoneyDrop, self->i_MoneyDropAmount, self->i_MoneyDropAmount * 10000, self->i_MoneyDropAmount);
-		}		
-		
-	/*	if (Menu::currentMenu("money_bank")) {
+		}
+
+		if (Menu::currentMenu("money_bank")) {
 
 			Menu::Title("Money bank drop");
 			if (Menu::Option("Give 200K banked"))
@@ -609,8 +580,8 @@ void OriginMenu()
 			Menu::BoolOption("Enable", &self->b_MoneyBank);
 			Menu::IntOption("Delay", &self->i_MoneyBankDelay, 10, 10000, 10);
 			Menu::BoolOption("Enable session limit", &self->b_MoneyBankLimit);
-				Menu::IntOption("Money session limit", &self->i_MaxBankedMoney, 200000, 2000000000, 200000);
-		}*/
+			Menu::IntOption("Money session limit", &self->i_MaxBankedMoney, 200000, 2000000000, 200000);
+		}
 
 		if (Menu::currentMenu("vehicule")) {
 
@@ -654,7 +625,7 @@ void OriginMenu()
 			}
 		}
 
-			/*Vehicle spawn menu*/
+		/*Vehicle spawn menu*/
 		for (int i = 0; i < 25; i++) {
 			char* cat = veh_cat_array[i];
 			if (Menu::currentMenu(cat)) {
@@ -676,7 +647,7 @@ void OriginMenu()
 			}
 			else if (cat == "Vehicules")
 				break;
-		}   
+		}
 
 		if (Menu::currentMenu("engine_modification")) {
 			Menu::Title("Multipliers");
@@ -704,7 +675,7 @@ void OriginMenu()
 				Menu::MenuOption("Color", "veh_color");
 				Menu::CharArray("Plate type", platesTypes, &i_PlateType, sizeof(platesTypes) / sizeof(*platesTypes) - 1);
 				Features::set_plate_type(veh, i_PlateType);
-				
+
 				numOfMod[0] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 0);
 				if (Menu::IntOption("Spolier", &modindex[0], 0, numOfMod[0]))
 					Features::apply_vehicle_mod(veh, 0, modindex[0]);
@@ -920,77 +891,6 @@ void OriginMenu()
 			if (Menu::IntOption("Custom rp lvl", &self->i_Player_RP, 1, 9000000000000, 10))
 				Features::set_player_rp(self->i_Player_RP);
 		}
-
-		if (Menu::currentMenu("menu_settings")) {
-
-			Menu::Title("Menu");
-
-			Menu::MenuOption("Title Text", "settings_theme_titletext");
-			Menu::MenuOption("Title Rect", "settings_theme_titlerect");
-			Menu::MenuOption("Scroller", "settings_theme_scroller");
-			Menu::MenuOption("Options Text", "settings_theme_options");
-			Menu::MenuOption("Options Rect", "settings_theme_optionsrect");
-			if (Menu::Option("Save Theme")) Menu::SaveMenuTheme(menuStyleLocation);
-			if (Menu::Option("Load Theme")) Menu::LoadMenuTheme(menuStyleLocation);
-			if (Menu::Option("Revert To Default")) {
-				titleText = { 255, 255, 255, 255 };
-				titleRect = { 255, 0, 0, 95 };
-				scroller = { 255, 255, 255, 70 };
-				options = { 255, 255, 255, 255 };
-				optionsrect = { 30, 30, 30, 60 };
-			}
-		}
-
-		if (Menu::currentMenu("settings_theme_titletext")) {
-
-			Menu::Title("Title Text");
-
-			Menu::IntOption("Red: ", &titleText.r, 0, 255);
-			Menu::IntOption("Green: ", &titleText.g, 0, 255);
-			Menu::IntOption("Blue: ", &titleText.b, 0, 255);
-			Menu::IntOption("Alpha: ", &titleText.a, 0, 255);
-		}
-
-		if (Menu::currentMenu("settings_theme_titlerect")) {
-
-			Menu::Title("Title Rect");
-
-			Menu::IntOption("Red: ", &titleRect.r, 0, 255);
-			Menu::IntOption("Green: ", &titleRect.g, 0, 255);
-			Menu::IntOption("Blue: ", &titleRect.b, 0, 255);
-			Menu::IntOption("Alpha: ", &titleRect.a, 0, 255);
-		}
-
-		if (Menu::currentMenu("settings_theme_scroller")) {
-
-			Menu::Title("Scroller");
-
-			Menu::IntOption("Red: ", &scroller.r, 0, 255);
-			Menu::IntOption("Green: ", &scroller.g, 0, 255);
-			Menu::IntOption("Blue: ", &scroller.b, 0, 255);
-			Menu::IntOption("Alpha: ", &scroller.a, 0, 255);
-		}
-
-		if (Menu::currentMenu("settings_theme_options")) {
-
-			Menu::Title("Options Text");
-
-			Menu::IntOption("Red: ", &options.r, 0, 255);
-			Menu::IntOption("Green: ", &options.g, 0, 255);
-			Menu::IntOption("Blue: ", &options.b, 0, 255);
-			Menu::IntOption("Alpha: ", &options.a, 0, 255);
-		}
-
-		if (Menu::currentMenu("settings_theme_optionsrect")) {
-
-			Menu::Title("Options Rect");
-
-			Menu::IntOption("Red: ", &optionsrect.r, 0, 255);
-			Menu::IntOption("Green: ", &optionsrect.g, 0, 255);
-			Menu::IntOption("Blue: ", &optionsrect.b, 0, 255);
-			Menu::IntOption("Alpha: ", &optionsrect.a, 0, 255);
-		}
-
 	}
 	Menu::endMenu();
 	updateFeatures();
@@ -1005,7 +905,7 @@ void updateFeatures() {
 		player_data *current_player = &lobby_players[i];
 		process_remote_money_features(current_player);
 	}
-	
+
 }
 
 void updateSelfFeatures() {
@@ -1066,13 +966,8 @@ void checkIfStillUpToDate() {
 	time_t current_time = time(0);
 	tm *time = localtime(&current_time);
 
-	if (time->tm_mon <= 2)
-		if (time->tm_mon == 2 && time->tm_mday < 3)
-			notifyAboveMap("Champion beta still available!"), still_available = true;
-		else if (time->tm_mon == 2 && time->tm_mday > 3)
-			notifyAboveMap("Champion beta outdated!");
-		else if (time->tm_mon < 2)
-			notifyAboveMap("Champion beta still available!"), still_available = true;
+	if (time->tm_mon == 2 && time->tm_mday < 16)
+		notifyAboveMap("Champion beta still available!"), still_available = true;
 	else
 		notifyAboveMap("Champion beta outdated!");
 

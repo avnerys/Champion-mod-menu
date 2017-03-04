@@ -125,7 +125,7 @@ void RequestControlOfEnt(Entity entity)
 		NETWORK::NETWORK_REQUEST_CONTROL_OF_ENTITY(entity);
 		tick++;
 	}
-	if (NETWORK::NETWORK_IS_SESSION_STARTED()) 
+	if (NETWORK::NETWORK_IS_SESSION_STARTED())
 	{
 		int netID = NETWORK::NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity);
 		RequestControlOfid(netID);
@@ -367,7 +367,7 @@ void teleport_to_objective()
 	}
 
 	blipFound ? teleport_to_coords(e, coords) : notifyAboveMap("Objective not found!", 0);
-	
+
 }
 
 //In Game KEYBOARD
@@ -489,7 +489,7 @@ void draw_menu_line(std::string caption, float lineWidth, float lineHeight, floa
 	// correcting values for active line
 	if (active)
 	{
-		
+
 		outline = false;
 		dropshadow = true;
 		text_col[0] = 0;
@@ -510,7 +510,7 @@ void draw_menu_line(std::string caption, float lineWidth, float lineHeight, floa
 		outline = true;
 		dropshadow = true;
 		text_col[0] = 255;
-		text_col[1] =255;
+		text_col[1] = 255;
 		text_col[2] = 255;
 		text_col[3] = 255;
 

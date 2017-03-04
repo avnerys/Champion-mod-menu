@@ -1,11 +1,11 @@
 #include "stdafx.h"
 
 float menux = 0.2f;
-rgba titleText = { 0, 0, 0, 255 };
-rgba titleRect = { 255, 200, 0, 255 };
-rgba scroller = { 80, 80, 80, 200 };
-rgba options = { 0, 0, 0, 255 };
-rgba optionsrect = { 255, 220, 30, 60 };
+rgba titleText = { 255, 255, 255, 255 };
+rgba titleRect = { 255, 0, 0, 95 };
+rgba scroller = { 255, 255, 255, 70 };
+rgba options = { 255, 255, 255, 255 };
+rgba optionsrect = { 30, 30, 30, 60 };
 
 int optioncount;
 int currentoption;
@@ -14,7 +14,7 @@ bool leftpress = false;
 bool rightpress = false;
 bool uppress = false;
 bool downpress = false;
-bool opened = false;
+bool opened = true;
 
 char* currentmenu[200];
 char* actualmenu = "main";

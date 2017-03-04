@@ -13,6 +13,7 @@ BOOL APIENTRY DllMain( HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpRese
 	{
 	case DLL_PROCESS_ATTACH:
 		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ControlThread, hModule, NULL, NULL);
+		Log::Msg("Hooking champion mod menu");
 		break;
 	case DLL_THREAD_ATTACH:
 		break;
