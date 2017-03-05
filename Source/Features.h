@@ -64,6 +64,4 @@ public:
 	static void Features::money_bank();
 
 	static void Features::apply_vehicle_mod(Vehicle veh, int modtype, int modindex);
-
-
 };

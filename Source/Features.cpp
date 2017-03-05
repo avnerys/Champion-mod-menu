@@ -17,13 +17,14 @@ static LPCSTR weaponNames[] = {
 int rgb_rainbow_red = 255, rgb_rainbow_green, rgb_rainbow_blue;
 
 void Features::Ped_drop(Ped player, int amount) {
-	uint model = $("a_c_pigeon");
+	uint model = $("a_c_rat");
 	if (!STREAMING::IS_MODEL_IN_CDIMAGE(model) || !STREAMING::IS_MODEL_VALID(model))
 		return;
 	STREAMING::REQUEST_MODEL(model);
 	while (!STREAMING::HAS_MODEL_LOADED(model))
 		WAIT(0);
-	Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, -0.15f);
+
+	Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, 0.5f);
 	Ped ped = PED::CREATE_PED(690, model, 0, 0, 0, 0.0f, false, false);
 	
 	PED::SET_PED_MONEY(ped, amount);
@@ -281,10 +282,10 @@ void Features::toggle_GodMod(bool toggle, Player player) {
 }
 
 void Features::toggle_Invisibility(bool toggle, Entity player) {
-	if (toggle)
-		ENTITY::SET_ENTITY_ALPHA(player, 1.0f, 0);
+	if (!toggle)
+		ENTITY::SET_ENTITY_ALPHA(player, 1000, 0);
 	else
-		ENTITY::SET_ENTITY_ALPHA(player, 0.0f, 0);
+		ENTITY::SET_ENTITY_ALPHA(player, 0, 0);
 }
 
 void Features::toggle_super_jump(bool toggle, Player player) {

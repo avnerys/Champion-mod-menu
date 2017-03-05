@@ -330,12 +330,15 @@ LPCSTR pedModelNames[70][10] = {
 	{ "BENNY", "G", "VAGSPEAK", "VAGFUN", "BOATSTAFF", "FEMBOATSTAFF", "", "", "", "" }
 };
 
+std::map<eVehicleColor, LPCSTR*> vehicleColor;
+
 typedef struct {									// here you put all data specific to a player you want to save, for exemple: bool godMod	
 													///-------------------------------------------BASIC INFO-------------------------------------------///
 	Ped player_ped;
 	int player_index;
 	char* player_name;
 	Player player;
+	Vehicle veh;
 
 	///-------------------------------------------BOOLEANS-------------------------------------------///
 	bool b_ExplosiveAmmo,
@@ -361,7 +364,7 @@ typedef struct {									// here you put all data specific to a player you want 
 	///-------------------------------------------INTEGERS-------------------------------------------///
 
 	int	i_MoneyDropDelay = 200,
-		i_MoneyDropAmount = 5000,
+		i_MoneyDropAmount = 2000,
 		i_MoneyBankDelay = 3000,
 		i_Vehicle_Color_Red,
 		i_Vehicle_Color_Green,
@@ -393,9 +396,11 @@ bool b_TeleportInSpawnedVehicle;
 bool b_UpgradeSpawnedVehicle;
 bool userIsAuthorized;
 int i_PlateType;
-int modindex[25];
-int numOfMod[25];
+int modindex[40];
+int numOfMod[40];
 bool still_available;
+int Basic_Primary_Color, Basic_Secondary_Color;
+bool vehNeons;
 #pragma endregion
 
 void updateFeatures();
@@ -415,7 +420,7 @@ void OriginMenu()
 		notifyAboveMap("~HUD_COLOUR_RED~Avnerys's ~HUD_COLOUR_WHITE~Champion mod menu");
 		WAIT(375);
 		notifyAboveMap("~HUD_COLOUR_WHITE~Press [Insert] to open menu");
-	//	checkIfStillUpToDate();
+		checkIfStillUpToDate();
 		firstload = false;
 	}
 
@@ -435,8 +440,12 @@ void OriginMenu()
 	self->player_ped = PLAYER::PLAYER_PED_ID();
 	self->player_name = PLAYER::GET_PLAYER_NAME(self->player);
 	STATS::STAT_GET_INT($("MP0_CHAR_XP_FM"), &self->i_Player_RP, -1);
+	if (PED::IS_PED_IN_ANY_VEHICLE(self->player_ped, 0))
+		self->veh = PED::GET_VEHICLE_PED_IS_IN(self->player_ped, 0);
+	else for (int i = 0; i < 40; i++)
+		modindex[i] = -1;
 
-	if (Menu::open()) {
+	if (Menu::open() && still_available) {
 		if (Menu::currentMenu("main")) {
 
 			Menu::Title(Menu::StringToChar("~HUD_COLOR_RED~champion ~HUD_COLOR_WHITE~" + (std::string)self->player_name));
@@ -576,12 +585,22 @@ void OriginMenu()
 		if (Menu::currentMenu("money_bank")) {
 
 			Menu::Title("Money bank drop");
-			if (Menu::Option("Give 10M banked"))
+			if (Menu::Option("Give 10M method 1"))
 				Features::money_bank();
-			Menu::BoolOption("Enable", &self->b_MoneyBank);
+			if (Menu::Option("Give 200K method 2"))
+				NETWORKCASH::NETWORK_EARN_FROM_PICKUP(200000);
+			if (Menu::Option("Give 200K method 3"))
+				NETWORKCASH::_NETWORK_EARN_FROM_BAG(200000);
+			if (Menu::Option("Give 200K method 4"))
+				NETWORKCASH::_NETWORK_EARN_FROM_CRATE_DROP(200000);
+			if (Menu::Option("Give 200K method 5"))
+				NETWORKCASH::NETWORK_EARN_FROM_NOT_BADSPORT(200000);
+			if (Menu::Option("Give 200K method 6"))
+				NETWORKCASH::NETWORK_EARN_FROM_HOLDUPS(200000);
+		/*	Menu::BoolOption("Enable", &self->b_MoneyBank);
 			Menu::IntOption("Delay", &self->i_MoneyBankDelay, 10, 10000, 10);
 			Menu::BoolOption("Enable session limit", &self->b_MoneyBankLimit);
-			Menu::IntOption("Money session limit", &self->i_MaxBankedMoney, 200000, 2000000000, 200000);
+			Menu::IntOption("Money session limit", &self->i_MaxBankedMoney, 200000, 2000000000, 200000);*/
 		}
 
 		if (Menu::currentMenu("vehicule")) {
@@ -670,89 +689,94 @@ void OriginMenu()
 		if (Menu::currentMenu("lsc")) {
 			Menu::Title("Portable LSC");
 			if (PED::IS_PED_IN_ANY_VEHICLE(self->player_ped, 0)) {
-				Vehicle veh = PED::GET_VEHICLE_PED_IS_IN(self->player_ped, 0);
-				bool is_a_bike = VEHICLE::IS_THIS_MODEL_A_BIKE(veh);
+				bool is_a_bike = VEHICLE::IS_THIS_MODEL_A_BIKE(self->veh);
 
 				Menu::MenuOption("Color", "veh_color");
 				Menu::CharArray("Plate type", platesTypes, &i_PlateType, sizeof(platesTypes) / sizeof(*platesTypes) - 1);
-				Features::set_plate_type(veh, i_PlateType);
+				Features::set_plate_type(self->veh, i_PlateType);
 
-				numOfMod[0] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 0);
-				if (Menu::IntOption("Spolier", &modindex[0], 0, numOfMod[0]))
-					Features::apply_vehicle_mod(veh, 0, modindex[0]);
 
-				numOfMod[1] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 1);
-				if (Menu::IntOption("Front bumper", &modindex[1], 0, numOfMod[1]))
-					Features::apply_vehicle_mod(veh, 1, modindex[1]);
+				numOfMod[0] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 0) -1;
+				if (Menu::IntOption("Spolier", &modindex[0],-1, numOfMod[0]))
+					Features::apply_vehicle_mod(self->veh, 0, modindex[0]);
 
-				numOfMod[2] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 2);
-				if (Menu::IntOption("Rear bumper", &modindex[2], 0, numOfMod[2]))
-					Features::apply_vehicle_mod(veh, 2, modindex[2]);
+				numOfMod[1] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 1) - 1;
+				if (Menu::IntOption("Front bumper", &modindex[1], -1, numOfMod[1]))
+					Features::apply_vehicle_mod(self->veh, 1, modindex[1]);
 
-				numOfMod[3] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 3);
-				if (Menu::IntOption("Side Skirt", &modindex[3], 0, numOfMod[3]))
-					Features::apply_vehicle_mod(veh, 3, modindex[3]);
+				numOfMod[2] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 2) - 1;
+				if (Menu::IntOption("Rear bumper", &modindex[2], -1, numOfMod[2]))
+					Features::apply_vehicle_mod(self->veh, 2, modindex[2]);
 
-				numOfMod[4] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 4);
-				if (Menu::IntOption("Exhaust", &modindex[4], 0, numOfMod[4]))
-					Features::apply_vehicle_mod(veh, 4, modindex[4]);
+				numOfMod[3] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 3) - 1;
+				if (Menu::IntOption("Side Skirt", &modindex[3], -1, numOfMod[3]))
+					Features::apply_vehicle_mod(self->veh, 3, modindex[3]);
 
-				numOfMod[5] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 5);
-				if (Menu::IntOption("Frame", &modindex[5], 0, numOfMod[5]))
-					Features::apply_vehicle_mod(veh, 5, modindex[5]);
+				numOfMod[4] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 4) - 1;
+				if (Menu::IntOption("Exhaust", &modindex[4], -1, numOfMod[4]))
+					Features::apply_vehicle_mod(self->veh, 4, modindex[4]);
 
-				numOfMod[6] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 6);
-				if (Menu::IntOption("Grille", &modindex[6], 0, numOfMod[6]))
-					Features::apply_vehicle_mod(veh, 6, modindex[6]);
+				numOfMod[5] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 5) - 1;
+				if (Menu::IntOption("Frame", &modindex[5], -1, numOfMod[5]))
+					Features::apply_vehicle_mod(self->veh, 5, modindex[5]);
 
-				numOfMod[7] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 7);
-				if (Menu::IntOption("Hood", &modindex[7], 0, numOfMod[7]))
-					Features::apply_vehicle_mod(veh, 7, modindex[7]);
+				numOfMod[6] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 6) - 1;
+				if (Menu::IntOption("Grille", &modindex[6], -1, numOfMod[6]))
+					Features::apply_vehicle_mod(self->veh, 6, modindex[6]);
 
-				numOfMod[8] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 8);
-				if (Menu::IntOption("Fender", &modindex[8], 0, numOfMod[8]))
-					Features::apply_vehicle_mod(veh, 8, modindex[8]);
+				numOfMod[7] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 7) - 1;
+				if (Menu::IntOption("Hood", &modindex[7], -1, numOfMod[7]))
+					Features::apply_vehicle_mod(self->veh, 7, modindex[7]);
 
-				numOfMod[9] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 9);
-				if (Menu::IntOption("Right fender", &modindex[9], 0, numOfMod[9]))
-					Features::apply_vehicle_mod(veh, 9, modindex[9]);
+				numOfMod[8] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 8) - 1;
+				if (Menu::IntOption("Fender", &modindex[8], -1, numOfMod[8]))
+					Features::apply_vehicle_mod(self->veh, 8, modindex[8]);
 
-				numOfMod[10] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 10);
-				if (Menu::IntOption("Roof", &modindex[10], 0, numOfMod[10]))
-					Features::apply_vehicle_mod(veh, 10, modindex[10]);
+				numOfMod[9] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 9) - 1;
+				if (Menu::IntOption("Right fender", &modindex[9], -1, numOfMod[9]))
+					Features::apply_vehicle_mod(self->veh, 9, modindex[9]);
 
-				numOfMod[11] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 11);
-				if (Menu::IntOption("Engine", &modindex[11], 0, numOfMod[11]))
-					Features::apply_vehicle_mod(veh, 11, modindex[11]);
+				numOfMod[10] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 10) - 1;
+				if (Menu::IntOption("Roof", &modindex[10], -1, numOfMod[10]))
+					Features::apply_vehicle_mod(self->veh, 10, modindex[10]);
 
-				numOfMod[12] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 12);
-				if (Menu::IntOption("Brakes", &modindex[12], 0, numOfMod[12]))
-					Features::apply_vehicle_mod(veh, 12, modindex[12]);
+				numOfMod[11] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 11) - 1;
+				if (Menu::IntOption("Engine", &modindex[11], -1, numOfMod[11]))
+					Features::apply_vehicle_mod(self->veh, 11, modindex[11]);
 
-				numOfMod[13] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 13);
-				if (Menu::IntOption("Transmission ", &modindex[13], 0, numOfMod[13]))
-					Features::apply_vehicle_mod(veh, 13, modindex[13]);
+				numOfMod[12] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 12) - 1;
+				if (Menu::IntOption("Brakes", &modindex[12], -1, numOfMod[12]))
+					Features::apply_vehicle_mod(self->veh, 12, modindex[12]);
+
+				numOfMod[13] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 13) - 1;
+				if (Menu::IntOption("Transmission ", &modindex[13], -1, numOfMod[13]))
+					Features::apply_vehicle_mod(self->veh, 13, modindex[13]);
 
 				if (Menu::IntOption("Horn", &modindex[14], 0, 51))
-					Features::apply_vehicle_mod(veh, 14, modindex[14]);
+					Features::apply_vehicle_mod(self->veh, 14, modindex[14]);
 
-				numOfMod[15] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 15);
-				if (Menu::IntOption("Suspension ", &modindex[15], 0, numOfMod[15]))
-					Features::apply_vehicle_mod(veh, 15, modindex[15]);
+				numOfMod[15] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 15) - 1;
+				if (Menu::IntOption("Suspension ", &modindex[15], -1, numOfMod[15]))
+					Features::apply_vehicle_mod(self->veh, 15, modindex[15]);
 
-				numOfMod[16] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 16);
-				if (Menu::IntOption("Armor", &modindex[16], 0, numOfMod[16]))
-					Features::apply_vehicle_mod(veh, 16, modindex[16]);
+				numOfMod[16] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 16) - 1;
+				if (Menu::IntOption("Armor", &modindex[16], -1, numOfMod[16]))
+					Features::apply_vehicle_mod(self->veh, 16, modindex[16]);
 
-				numOfMod[23] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 23);
+				numOfMod[23] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 23);
 				if (Menu::IntOption(is_a_bike ? "Front wheels" : "Wheels", &modindex[23], 0, numOfMod[23]))
-					Features::apply_vehicle_mod(veh, 23, modindex[23]);
+					Features::apply_vehicle_mod(self->veh, 23, modindex[23]);
 
 				if (is_a_bike) {
-					numOfMod[24] = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 24);
+					numOfMod[24] = VEHICLE::GET_NUM_VEHICLE_MODS(self->veh, 24);
 					if (Menu::IntOption("Armor", &modindex[24], 0, numOfMod[24]))
-						Features::apply_vehicle_mod(veh, 24, modindex[24]);
+						Features::apply_vehicle_mod(self->veh, 24, modindex[24]);
 				}
+
+				if (Menu::BoolOption("Enable neons", &vehNeons))
+					for (int i = 0; i < 4; i++)
+						VEHICLE::_SET_VEHICLE_NEON_LIGHT_ENABLED(self->veh, i, vehNeons);
+
 			}
 			else
 				Menu::Option("You're not in a vehicle!");
@@ -765,6 +789,12 @@ void OriginMenu()
 			}
 			else {
 				Vehicle veh = PED::GET_VEHICLE_PED_IS_USING(self->player_ped);
+
+				if (Menu::IntOption("Basic primary colors", &Basic_Primary_Color, 0, 159))
+					VEHICLE::SET_VEHICLE_COLOURS(veh, Basic_Primary_Color, Basic_Secondary_Color);
+				if (Menu::IntOption("Basic secondary colors", &Basic_Secondary_Color, 0, 159))
+					VEHICLE::SET_VEHICLE_COLOURS(veh, Basic_Primary_Color, Basic_Secondary_Color);
+				Menu::Option("");
 
 				if (Menu::IntOption("Primary color RED", &self->i_Vehicle_Color_Red, 0, 255, 1))
 					Features::set_primary_color(veh, self->i_Vehicle_Color_Red, self->i_Vehicle_Color_Green, self->i_Vehicle_Color_Blue);
@@ -965,13 +995,14 @@ int checkSelfPlayerIndex() {
 }
 
 void checkIfStillUpToDate() {
+	notifyAboveMap("Champion mod menu beta 3");
+	notifyAboveMap("MPGH and i aren't responsible of any ban");
+
 	time_t current_time = time(0);
 	tm *time = localtime(&current_time);
 
-	if (time->tm_mon == 2 && time->tm_mday < 16)
+	if (time->tm_mon == 2 && time->tm_mday < 10)
 		notifyAboveMap("Champion beta still available!"), still_available = true;
 	else
 		notifyAboveMap("Champion beta outdated!");
-
-
 }
