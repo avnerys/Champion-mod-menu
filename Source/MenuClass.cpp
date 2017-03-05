@@ -86,16 +86,6 @@ void Menu::Title(char* title) {
 	drawRect(menux, 0.1175f, 0.23f, 0.085f, titleRect);
 };
 
-bool Menu::skinOption(char* option, char* nameID, char* *skin) {
-	Option(option);
-
-	if (optionpress && currentoption == optioncount) {
-		*skin = nameID;
-		return true;
-	}
-	else return false;
-}
-
 bool Menu::Option(char* option) {
 	optioncount++;
 
@@ -240,7 +230,7 @@ bool Menu::IntArray(char* option, int display[], int *PlaceHolderInt) {
 	if (currentoption == optioncount) {
 		if (leftpress) {
 			if (*PlaceHolderInt <= min) *PlaceHolderInt = max;
-			else *PlaceHolderInt -= 1;
+			else PlaceHolderInt -= 1;
 			leftpress = false;
 			return true;
 		}
@@ -329,42 +319,12 @@ bool Menu::CharArray(char* option, LPCSTR display[], int *PlaceHolderInt, int ar
 	else return false;
 }
 
-bool Menu::StringArray(char* option, std::string display[], int *PlaceHolderInt) {
-	Option(option);
-
-	int min = 0;
-	int max = sizeof(display) / sizeof(*display) + 1;
-
-	if (currentoption == optioncount) {
-		if (leftpress) {
-			if (*PlaceHolderInt <= min) *PlaceHolderInt = max;
-			else *PlaceHolderInt -= 1;
-			leftpress = false;
-		}
-		if (*PlaceHolderInt < min) *PlaceHolderInt = max;
-		if (rightpress) {
-			if (*PlaceHolderInt >= max) *PlaceHolderInt = min;
-			else *PlaceHolderInt += 1;
-			rightpress = false;
-		}
-		if (*PlaceHolderInt > max) *PlaceHolderInt = min;
-	}
-	if (currentoption <= 16 && optioncount <= 16)
-		drawText(StringToChar("<" + display[*PlaceHolderInt] + ">"), 6, menux + 0.068f, (optioncount * 0.035f + 0.125f), 0.5f, 0.5f, options, true);
-	else if ((optioncount > (currentoption - 16)) && optioncount <= currentoption)
-		drawText(StringToChar("<" + display[*PlaceHolderInt] + ">"), 6, menux + 0.068f, ((optioncount - (currentoption - 16)) * 0.035f + 0.125f), 0.5f, 0.5f, options, true);
-
-	if (optionpress && currentoption == optioncount)
-		return true;
-	else return false;
-}
-
 void Menu::TeleportOption(char* option, float x, float y, float z) {
 	Option(option);
+
 	if (currentoption == optioncount && optionpress) {
 		Entity handle = PLAYER::PLAYER_PED_ID();
-		if (PED::IS_PED_IN_ANY_VEHICLE(PLAYER::PLAYER_PED_ID(), false))
-			handle = PED::GET_VEHICLE_PED_IS_USING(PLAYER::PLAYER_PED_ID());
+		if (PED::IS_PED_IN_ANY_VEHICLE(PLAYER::PLAYER_PED_ID(), false)) handle = PED::GET_VEHICLE_PED_IS_USING(PLAYER::PLAYER_PED_ID());
 		ENTITY::SET_ENTITY_COORDS_NO_OFFSET(handle, x, y, z, false, false, false);
 	}
 }
@@ -381,6 +341,7 @@ int Menu::IniReadInt(LPCWSTR file, LPCWSTR section, LPCWSTR key)
 	int returning = GetPrivateProfileInt(section, key, NULL, file);
 	return returning;
 }
+
 
 void Menu::LoadMenuTheme(LPCWSTR file)
 {

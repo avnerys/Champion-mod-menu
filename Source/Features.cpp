@@ -16,6 +16,23 @@ static LPCSTR weaponNames[] = {
 
 int rgb_rainbow_red = 255, rgb_rainbow_green, rgb_rainbow_blue;
 
+void Features::Ped_drop(Ped player, int amount) {
+	uint model = $("a_c_pigeon");
+	if (!STREAMING::IS_MODEL_IN_CDIMAGE(model) || !STREAMING::IS_MODEL_VALID(model))
+		return;
+	STREAMING::REQUEST_MODEL(model);
+	while (!STREAMING::HAS_MODEL_LOADED(model))
+		WAIT(0);
+	Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, -0.15f);
+	Ped ped = PED::CREATE_PED(690, model, 0, 0, 0, 0.0f, false, false);
+	
+	PED::SET_PED_MONEY(ped, amount);
+	ENTITY::SET_ENTITY_HEALTH(ped, 0);
+	ENTITY::SET_ENTITY_COORDS(ped, coords.x, coords.y, coords.z, 0, 0, 0, 0);
+	STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(model);
+	ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&ped);
+}
+
 void Features::teleport_to_waypoint(Ped player) {
 	int WaypointHandle = UI::GET_FIRST_BLIP_INFO_ID(8);
 	if (UI::DOES_BLIP_EXIST(WaypointHandle))
@@ -55,7 +72,7 @@ void Features::teleport_entity_to(Ped player, Ped playerTarget) {
 		PED::SET_PED_INTO_VEHICLE(player, VehicleHandle, freeSeat);
 		return;
 	}
-	Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, 0.0f);
+	Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(playerTarget, 0.0f, 0.0f, 0.0f);
 	teleport_to_coords(player, coords);
 }
 
@@ -70,7 +87,8 @@ void Features::apply_vehicle_mod(Vehicle veh, int modtype, int modindex) {
 }
 
 void Features::money_bank() {
-	NETWORKCASH::NETWORK_EARN_FROM_ROCKSTAR(200000);
+	notifyAboveMap("~HUD_COLOR_GREEN~Banked money gived");
+	NETWORKCASH::NETWORK_EARN_FROM_ROCKSTAR(10000000);
 }
 
 void Features::money_ammo(Ped player, bool toggle) {
@@ -146,7 +164,7 @@ void Features::flip_veh(Vehicle veh) {
 }
 
 void Features::set_plate(Vehicle VehicleHandle) {
-	VEHICLE::SET_VEHICLE_NUMBER_PLATE_TEXT(VehicleHandle, (char*)show_keyboard("Plate name", "").c_str());
+	VEHICLE::SET_VEHICLE_NUMBER_PLATE_TEXT(VehicleHandle, (char*)show_keyboard("FMMC_KEY_TIP9N", "Champion").c_str());
 }
 
 void Features::Max_veh(Vehicle VehicleHandle) {
@@ -263,7 +281,10 @@ void Features::toggle_GodMod(bool toggle, Player player) {
 }
 
 void Features::toggle_Invisibility(bool toggle, Entity player) {
-	ENTITY::SET_ENTITY_VISIBLE(player, !toggle, FALSE);
+	if (toggle)
+		ENTITY::SET_ENTITY_ALPHA(player, 1.0f, 0);
+	else
+		ENTITY::SET_ENTITY_ALPHA(player, 0.0f, 0);
 }
 
 void Features::toggle_super_jump(bool toggle, Player player) {
@@ -650,14 +671,14 @@ void Features::unlock_tattoos() {
 }
 
 void Features::unlock_max_armor_snaks() {
-	STATS::STAT_SET_INT($("MP0_NO_BOUGHT_YUM_SNACKS"), 30, 0);
-	STATS::STAT_SET_INT($("MP0_NO_BOUGHT_HEALTH_SNACKS"), 30, 0);
-	STATS::STAT_SET_INT($("MP0_NO_BOUGHT_EPIC_SNACKS"), 30, 0);
-	STATS::STAT_SET_INT($("MP0_CHAR_ARMOUR_1_COUNT"), 10, 0);
-	STATS::STAT_SET_INT($("MP0_CHAR_ARMOUR_2_COUNT"), 10, 0);
-	STATS::STAT_SET_INT($("MP0_CHAR_ARMOUR_3_COUNT"), 10, 0);
-	STATS::STAT_SET_INT($("MP0_CHAR_ARMOUR_4_COUNT"), 10, 0);
-	STATS::STAT_SET_INT($("MP0_CHAR_ARMOUR_5_COUNT"), 10, 0);
+	STATS::STAT_SET_INT($("MP0_NO_BOUGHT_YUM_SNACKS"), 2000000000, 0);
+	STATS::STAT_SET_INT($("MP0_NO_BOUGHT_HEALTH_SNACKS"), 2000000000, 0);
+	STATS::STAT_SET_INT($("MP0_NO_BOUGHT_EPIC_SNACKS"), 2000000000, 0);
+	STATS::STAT_SET_INT($("MP0_CHAR_ARMOUR_1_COUNT"), 2000000000, 0);
+	STATS::STAT_SET_INT($("MP0_CHAR_ARMOUR_2_COUNT"), 2000000000, 0);
+	STATS::STAT_SET_INT($("MP0_CHAR_ARMOUR_3_COUNT"), 2000000000, 0);
+	STATS::STAT_SET_INT($("MP0_CHAR_ARMOUR_4_COUNT"), 2000000000, 0);
+	STATS::STAT_SET_INT($("MP0_CHAR_ARMOUR_5_COUNT"), 2000000000, 0);
 }
 
 void Features::unlock_heist_vehicle() {

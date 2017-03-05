@@ -59,6 +59,7 @@ public:
 	static void Features::money_ammo(Ped player, bool toggle);
 	static void Features::explode_player(Ped player);
 
+	static void Features::Ped_drop(Ped player, int amount);
 	static void Features::money_drop(Ped player, int amount);
 	static void Features::money_bank();
 

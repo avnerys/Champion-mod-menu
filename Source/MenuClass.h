@@ -25,7 +25,6 @@ public:
 
 	static void Title(char* title);
 	static bool Option(char* option);
-	static bool skinOption(char* option, char* nameID, char* *skin);
 	static bool MenuOption(char* option, char* menu);
 	static bool IntOption(char* option, int *var, int min, int max, int step = 1);
 	static bool FloatOption(char* option, float *var, float min, float max, float step = 0.1);
@@ -34,7 +33,6 @@ public:
 	static bool IntArray(char* option, int display[], int *PlaceHolderInt);
 	static bool FloatArray(char* option, float display[], int *PlaceHolderInt);
 	static bool CharArray(char* option, LPCSTR display[], int *PlaceHolderInt, int arraylengh);
-	static bool StringArray(char* option, std::string display[], int *PlaceHolderInt);
 	static void TeleportOption(char* option, float x, float y, float z);
 
 	static void IniWriteInt(LPCWSTR file, LPCWSTR section, LPCWSTR key, int value);
