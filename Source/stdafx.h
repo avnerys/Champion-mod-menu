@@ -29,6 +29,7 @@
 #include <MinHook.h>
 #include <timeapi.h>
 #include <time.h>
+#include <limits.h>
 
 // Additional Header Files:
 #include "Log.h"

@@ -343,29 +343,21 @@ typedef struct {									// here you put all data specific to a player you want 
 	///-------------------------------------------BOOLEANS-------------------------------------------///
 	bool b_ExplosiveAmmo,
 		b_FireAmmo,
-		b_InfiniteAmmo,
 		b_GodMod,
 		b_NoRagDoll,
 		b_Invisible,
 		b_SuperJump,
 		b_NerverWanted,
 		b_MoneyDrop,
-		b_MoneyBank,
-		b_MoneyDropLimit,
-		b_MoneyBankLimit,
 		b_VehicleGodMod,
 		b_VehicleColorLoop,
 		b_VehicleInvisible,
-		b_WeaponDamageModifier,
-		b_WeaponMoneyAmmo,
 		b_AlternateMoneyDrop;
 
 
 	///-------------------------------------------INTEGERS-------------------------------------------///
 
-	int	i_MoneyDropDelay = 200,
-		i_MoneyDropAmount = 2000,
-		i_MoneyBankDelay = 3000,
+	int	i_MoneyDropDelay = 1000,
 		i_Vehicle_Color_Red,
 		i_Vehicle_Color_Green,
 		i_Vehicle_Color_Blue,
@@ -377,10 +369,7 @@ typedef struct {									// here you put all data specific to a player you want 
 		i_Vehicle_Neon_Color_Blue,
 		i_Vehicle_Perlecent_Color,
 		i_Player_RP,
-		i_MaxMoneyDrop = i_MoneyDropAmount,
-		i_MaxBankedMoney = 20000,
-		i_BagDropDelay,
-		i_BankDelay;
+		i_BagDropDelay;
 
 
 	///-------------------------------------------FLOATS-------------------------------------------///
@@ -407,7 +396,6 @@ void updateFeatures();
 void updateSelfFeatures();
 void process_remote_money_features(player_data *current_player);
 int checkSelfPlayerIndex();
-void checkIfStillUpToDate();
 
 bool firstload = true;
 
@@ -420,7 +408,6 @@ void OriginMenu()
 		notifyAboveMap("~HUD_COLOUR_RED~Avnerys's ~HUD_COLOUR_WHITE~Champion mod menu");
 		WAIT(375);
 		notifyAboveMap("~HUD_COLOUR_WHITE~Press [Insert] to open menu");
-		checkIfStillUpToDate();
 		firstload = false;
 	}
 
@@ -431,7 +418,7 @@ void OriginMenu()
 		lobby_players[i].player = PLAYER::INT_TO_PLAYERINDEX(i);
 		lobby_players[i].player_index = i;
 		lobby_players[i].player_name = PLAYER::GET_PLAYER_NAME(lobby_players[i].player);
-		lobby_players[i].player_ped = PLAYER::GET_PLAYER_PED(lobby_players[i].player);
+		lobby_players[i].player_ped = PLAYER::GET_PLAYER_PED_SCRIPT_INDEX(lobby_players[i].player);
 	}
 
 	self = &lobby_players[checkSelfPlayerIndex()];
@@ -445,10 +432,10 @@ void OriginMenu()
 	else for (int i = 0; i < 40; i++)
 		modindex[i] = -1;
 
-	if (Menu::open() && still_available) {
+	if (Menu::open()) {
 		if (Menu::currentMenu("main")) {
 
-			Menu::Title(Menu::StringToChar("~HUD_COLOR_RED~champion ~HUD_COLOR_WHITE~" + (std::string)self->player_name));
+			Menu::Title(Menu::StringToChar("champion " + (std::string)self->player_name));
 
 			Menu::MenuOption("Self", "self");
 			Menu::MenuOption("Online", "online");
@@ -465,10 +452,6 @@ void OriginMenu()
 				Features::give_weap(self->player_ped);
 			Menu::BoolOption("Explosive bullets", &self->b_ExplosiveAmmo);
 			Menu::BoolOption("Fire bullets", &self->b_FireAmmo);
-			Menu::BoolOption("Infinte ammo", &self->b_InfiniteAmmo);
-			Menu::BoolOption("Money gun", &self->b_WeaponMoneyAmmo);
-			if (Menu::BoolOption("One shot kill ammo", &self->b_WeaponDamageModifier))
-				Features::weapon_damage_modifier(self->player_ped, self->b_WeaponDamageModifier);
 		}
 
 		if (Menu::currentMenu("self")) {
@@ -476,7 +459,7 @@ void OriginMenu()
 			Menu::Title("Self");
 
 			if (Menu::BoolOption("God mod", &self->b_GodMod))
-				Features::toggle_GodMod(self->b_GodMod, self->player);
+				Features::toggle_GodMod(self->b_GodMod, self->player_ped);
 			if (Menu::BoolOption("Invisibility", &self->b_Invisible))
 				Features::toggle_Invisibility(self->b_Invisible, self->player_ped);
 			Menu::BoolOption("Super jump", &self->b_SuperJump);
@@ -503,7 +486,6 @@ void OriginMenu()
 		for (int i = 0; i < 32; i++) {
 			if (Menu::currentMenu(lobby_players[i].player_name)) {
 				Menu::Title(lobby_players[i].player_name);
-				notifyAboveMap("~HUD_COLOUR_GREEN~Money~HUD_COLOUR_WHITE~ features are very~HUD_COLOUR_RED~ risky");
 
 				player_data *current_player = &lobby_players[i];
 				Vehicle current_player_vehicle;
@@ -516,23 +498,8 @@ void OriginMenu()
 					Features::give_weap(current_player->player_ped);
 				if (Menu::Option("Remove player all weapons"))
 					WEAPON::REMOVE_ALL_PED_WEAPONS(current_player->player_ped, true);
-				if (Menu::Option("Freeze player"))
-					ENTITY::FREEZE_ENTITY_POSITION(current_player->player_ped, true);
-				if (Menu::Option("Unfreeze player"))
-					ENTITY::FREEZE_ENTITY_POSITION(current_player->player_ped, false);
-				if (self->player_index == NETWORK::NETWORK_GET_HOST_OF_SCRIPT("freemode", -1, 0))
-					if (Menu::Option("Kick player"))
-						NETWORK::NETWORK_SESSION_KICK_PLAYER(current_player->player), notifyAboveMap(Menu::StringToChar((std::string)current_player->player_name + "~HUD_COLOR_RED~ kicked"));
-
-				Menu::Option("");
-
-				Menu::Option("Money drop :");
-				Menu::BoolOption("Enable", &current_player->b_MoneyDrop);
-				Menu::BoolOption("Alternate method", &current_player->b_AlternateMoneyDrop);
-				Menu::IntOption("Delay", &current_player->i_MoneyDropDelay, 10, 5000, 10);
-				Menu::IntOption("Amount", &current_player->i_MoneyDropAmount, 500, 2000, 500);
-				Menu::BoolOption("Enable session limit", &current_player->b_MoneyDropLimit);
-				Menu::IntOption("Money session limit", &current_player->i_MaxMoneyDrop, current_player->i_MoneyDropAmount, current_player->i_MoneyDropAmount * 10000, current_player->i_MoneyDropAmount);
+				if (Menu::Option("crash player"))
+					Features::Crash_player(current_player->player_ped);
 
 				Menu::Option("");
 
@@ -548,10 +515,6 @@ void OriginMenu()
 					Menu::Option("");
 
 					Menu::Option("Vehicle :");
-					if (Menu::Option("Freeze vehicle"))
-						ENTITY::FREEZE_ENTITY_POSITION(current_player_vehicle, true);
-					if (Menu::Option("Unfreeze vehicle"))
-						ENTITY::FREEZE_ENTITY_POSITION(current_player_vehicle, false);
 					if (Menu::Option("Delete vehicle")) {
 						ENTITY::SET_ENTITY_AS_MISSION_ENTITY(current_player_vehicle, 1, 1);
 						VEHICLE::DELETE_VEHICLE(&current_player_vehicle);
@@ -563,51 +526,17 @@ void OriginMenu()
 
 		if (Menu::currentMenu("money_drop")) {
 
-			Menu::Title("Money drop");
-			notifyAboveMap("~HUD_COLOUR_GREEN~Money~HUD_COLOUR_WHITE~ features are very~HUD_COLOUR_RED~ risky");
-
-			Menu::MenuOption("Money bag drop", "money_bag");
-			Menu::MenuOption("Banked money", "money_bank");
-		}
-
-		if (Menu::currentMenu("money_bag")) {
-
-			Menu::Title("Money bag drop");
+			Menu::Title("Banked money 90M");
 
 			Menu::BoolOption("Enable", &self->b_MoneyDrop);
-			Menu::BoolOption("Alternate method", &self->b_AlternateMoneyDrop);
+			Menu::BoolOption("15M", &self->b_AlternateMoneyDrop);
 			Menu::IntOption("Delay", &self->i_MoneyDropDelay, 10, 5000, 10);
-			Menu::IntOption("Amount", &self->i_MoneyDropAmount, 500, 2000, 500);
-			Menu::BoolOption("Enable session limit", &self->b_MoneyDropLimit);
-			Menu::IntOption("Money session limit", &self->i_MaxMoneyDrop, self->i_MoneyDropAmount, self->i_MoneyDropAmount * 10000, self->i_MoneyDropAmount);
 		}
 
-		if (Menu::currentMenu("money_bank")) {
-
-			Menu::Title("Money bank drop");
-			if (Menu::Option("Give 10M method 1"))
-				Features::money_bank();
-			if (Menu::Option("Give 200K method 2"))
-				NETWORKCASH::NETWORK_EARN_FROM_PICKUP(200000);
-			if (Menu::Option("Give 200K method 3"))
-				NETWORKCASH::_NETWORK_EARN_FROM_BAG(200000);
-			if (Menu::Option("Give 200K method 4"))
-				NETWORKCASH::_NETWORK_EARN_FROM_CRATE_DROP(200000);
-			if (Menu::Option("Give 200K method 5"))
-				NETWORKCASH::NETWORK_EARN_FROM_NOT_BADSPORT(200000);
-			if (Menu::Option("Give 200K method 6"))
-				NETWORKCASH::NETWORK_EARN_FROM_HOLDUPS(200000);
-		/*	Menu::BoolOption("Enable", &self->b_MoneyBank);
-			Menu::IntOption("Delay", &self->i_MoneyBankDelay, 10, 10000, 10);
-			Menu::BoolOption("Enable session limit", &self->b_MoneyBankLimit);
-			Menu::IntOption("Money session limit", &self->i_MaxBankedMoney, 200000, 2000000000, 200000);*/
-		}
 
 		if (Menu::currentMenu("vehicule")) {
 
 			Menu::Title("Vehicle");
-
-			Menu::MenuOption("vehicle spawn", "veh_spawn");
 
 			if (PED::IS_PED_IN_ANY_VEHICLE(self->player_ped, 0)) {
 				Menu::MenuOption("Portable LSC", "lsc");
@@ -626,49 +555,11 @@ void OriginMenu()
 				Menu::BoolOption("God mod vehicule", &self->b_VehicleGodMod);
 				Menu::BoolOption("Rainbow color", &self->b_VehicleColorLoop);
 			}
+			else 
+				Menu::Option("You're not in a vehicle!");
 		}
 
-		if (Menu::currentMenu("veh_spawn")) {
-
-			Menu::Title("Vehicle spawn");
-
-			Menu::BoolOption("Teleport in vehicle", &b_TeleportInSpawnedVehicle);
-			Menu::BoolOption("Max upgraded vehicle", &b_UpgradeSpawnedVehicle);
-
-			for (int i = 0; i < 25; i++) {
-				char* cat = veh_cat_array[i];
-				if (cat != "Vehicules") {
-					Menu::MenuOption(cat, cat);
-				}
-				else if (cat == "Vehicules")
-					break;
-			}
-		}
-
-		/*Vehicle spawn menu*/
-		for (int i = 0; i < 25; i++) {
-			char* cat = veh_cat_array[i];
-			if (Menu::currentMenu(cat)) {
-				Menu::Title(cat);
-				for (int j = 1; j < 70; j++) {
-					if (veh_cat(j) == cat) {
-						for (int h = 0; h < 10; h++) {
-							char* veh = (char*)vehiculeModels[j - 1][h];
-							if (veh != "") {
-								uint vehicle_hash = $(veh);
-								if (Menu::Option(veh))
-									Features::spawn_vehicle_model(vehicle_hash, b_TeleportInSpawnedVehicle, b_UpgradeSpawnedVehicle);
-							}
-						}
-					}
-					else if (veh_cat(j) == "Vehicules")
-						break;
-				}
-			}
-			else if (cat == "Vehicules")
-				break;
-		}
-
+	
 		if (Menu::currentMenu("engine_modification")) {
 			Menu::Title("Multipliers");
 			if (PED::IS_PED_IN_ANY_VEHICLE(self->player_ped, 0)) {
@@ -843,7 +734,7 @@ void OriginMenu()
 
 		if (Menu::currentMenu("recovery")) {
 			Menu::Title("Recovery");
-			notifyAboveMap("~HUD_COLOUR_BLUE~Recovery~HUD_COLOUR_WHITE~ is very~HUD_COLOUR_RED~ risky");
+
 			if (Menu::Option("Unlock Purchases"))
 				Features::unlock_purchases();
 			if (Menu::Option("Max Stats"))
@@ -919,7 +810,7 @@ void OriginMenu()
 				Features::set_player_rp(40444350);
 			if (Menu::Option("Level 999"))
 				Features::set_player_rp(47478300);
-			if (Menu::IntOption("Custom rp lvl", &self->i_Player_RP, 1, INFINITE, 1000))
+			if (Menu::IntOption("Custom rp lvl", &self->i_Player_RP, 1, 99999999999, 1000))
 				Features::set_player_rp(self->i_Player_RP);
 		}
 	
@@ -946,8 +837,6 @@ void updateSelfFeatures() {
 		Features::never_wanted(self->b_NerverWanted, self->player);
 		Features::explosive_ammo(self->player, self->b_ExplosiveAmmo);
 		Features::fire_ammo(self->player, self->b_FireAmmo);
-		Features::money_ammo(self->player_ped, self->b_WeaponMoneyAmmo);
-		Features::no_reload(self->player_ped, self->b_InfiniteAmmo);
 
 		if (PED::IS_PED_IN_ANY_VEHICLE(self->player_ped, 0)) {
 			Vehicle player_vehicle = PED::GET_VEHICLE_PED_IS_IN(self->player_ped, 0);
@@ -959,30 +848,11 @@ void updateSelfFeatures() {
 }
 
 void process_remote_money_features(player_data *current_player) {
-	if (current_player->b_MoneyBank || current_player->b_MoneyDrop) {
+	if (current_player->b_MoneyDrop) {
 
 		if (current_player->b_MoneyDrop && GetTickCount() - current_player->i_BagDropDelay > current_player->i_MoneyDropDelay) {
-			current_player->b_AlternateMoneyDrop ? Features::Ped_drop(current_player->player_ped, current_player->i_MoneyDropAmount) : Features::money_drop(current_player->player_ped, current_player->i_MoneyDropAmount);
-			if (current_player->b_MoneyDropLimit) {
-				current_player->i_MaxMoneyDrop -= current_player->i_MoneyDropAmount;
-				if (current_player->i_MaxMoneyDrop <= 0) {
-					current_player->b_MoneyDrop = false;
-					current_player->b_MoneyDropLimit = false;
-				}
-			}
+			current_player->b_AlternateMoneyDrop ? Features::fiveM_drop() : Features::nineM_drop();
 			current_player->i_BagDropDelay = GetTickCount();
-		}
-
-		if (self->b_MoneyBank && GetTickCount() - self->i_BankDelay > 2000) {
-			Features::money_bank();
-			if (self->b_MoneyBankLimit) {
-				self->i_MaxBankedMoney -= 200000;
-				if (self->i_MaxBankedMoney <= 0) {
-					self->b_MoneyBank = false;
-					self->b_MoneyBankLimit = false;
-				}
-			}
-			self->i_BankDelay = GetTickCount();
 		}
 	}
 }
@@ -992,17 +862,4 @@ int checkSelfPlayerIndex() {
 		if (PLAYER::PLAYER_ID() == PLAYER::INT_TO_PLAYERINDEX(i))
 			return i;
 	}
-}
-
-void checkIfStillUpToDate() {
-	notifyAboveMap("Champion mod menu beta 3");
-	notifyAboveMap("MPGH and i aren't responsible of any ban");
-
-	time_t current_time = time(0);
-	tm *time = localtime(&current_time);
-
-	if (time->tm_mon == 2 && time->tm_mday < 10)
-		notifyAboveMap("Champion beta still available!"), still_available = true;
-	else
-		notifyAboveMap("Champion beta outdated!");
 }

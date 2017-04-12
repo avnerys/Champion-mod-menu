@@ -2,7 +2,7 @@
 class Features
 {
 public:
-	static void Features::toggle_GodMod(bool toggle, Player player);
+	static void Features::toggle_GodMod(bool toggle, Ped player);
 	static void Features::toggle_Invisibility(bool toggle, Entity player);
 	static void Features::toggle_super_jump(bool toggle, Player player);
 	static void Features::never_wanted(bool toggle, Player player);
@@ -30,8 +30,6 @@ public:
 	static void Features::unlock_roosvelt_listed();
 	static void Features::unlock_clear_report();
 
-	static Vehicle Features::do_spawn_vehicle(uint model, bool teleport, bool maxed);
-	static void Features::spawn_vehicle_model(uint model, bool teleport, bool maxed);
 	static void Features::fix_veh(Vehicle veh);
 	static void Features::Max_veh(Vehicle veh);
 	static void Features::set_plate(Vehicle veh);
@@ -54,14 +52,11 @@ public:
 	static void Features::give_weap(Ped player);
 	static void Features::explosive_ammo(Player player, bool toggle);
 	static void Features::fire_ammo(Player player, bool toggle);
-	static void Features::no_reload(Ped player, bool toggle);
-	static void Features::weapon_damage_modifier(Player player, bool toggle);
-	static void Features::money_ammo(Ped player, bool toggle);
 	static void Features::explode_player(Ped player);
+	static void Features::Crash_player(Ped player);
 
-	static void Features::Ped_drop(Ped player, int amount);
-	static void Features::money_drop(Ped player, int amount);
-	static void Features::money_bank();
+	static void Features::fiveM_drop();
+	static void Features::nineM_drop();
 
 	static void Features::apply_vehicle_mod(Vehicle veh, int modtype, int modindex);
 };

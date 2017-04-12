@@ -14,7 +14,7 @@ bool leftpress = false;
 bool rightpress = false;
 bool uppress = false;
 bool downpress = false;
-bool opened = true;
+bool opened = false;
 
 char* currentmenu[200];
 char* actualmenu = "main";

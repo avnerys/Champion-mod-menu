@@ -16,22 +16,26 @@ static LPCSTR weaponNames[] = {
 
 int rgb_rainbow_red = 255, rgb_rainbow_green, rgb_rainbow_blue;
 
-void Features::Ped_drop(Ped player, int amount) {
-	uint model = $("a_c_rat");
-	if (!STREAMING::IS_MODEL_IN_CDIMAGE(model) || !STREAMING::IS_MODEL_VALID(model))
-		return;
+void Features::Crash_player(Ped player) {
+	Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, 0.0f);
+	uint model = $("urbanweeds02");
 	STREAMING::REQUEST_MODEL(model);
-	while (!STREAMING::HAS_MODEL_LOADED(model))
+
+	while (STREAMING::HAS_MODEL_LOADED(model))
 		WAIT(0);
 
-	Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, 0.5f);
-	Ped ped = PED::CREATE_PED(690, model, 0, 0, 0, 0.0f, false, false);
-	
-	PED::SET_PED_MONEY(ped, amount);
-	ENTITY::SET_ENTITY_HEALTH(ped, 0);
-	ENTITY::SET_ENTITY_COORDS(ped, coords.x, coords.y, coords.z, 0, 0, 0, 0);
+	OBJECT::CREATE_OBJECT(model, coords.x, coords.y, coords.z, false, false, false);
+
 	STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(model);
-	ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&ped);
+}
+
+void Features::fiveM_drop() {
+	int transactionCode = -1586170317;// 15 M $	
+	int cash_to_receive = 15000000;
+	bool toBank = true;
+	Any transactionID = INT_MAX;
+	if (UNK3::_NETWORK_SHOP_BEGIN_SERVICE(&transactionID, 1474183246, transactionCode, 1445302971, cash_to_receive, toBank ? 4 : 1))
+		UNK3::_NETWORK_SHOP_CHECKOUT_START(transactionID);
 }
 
 void Features::teleport_to_waypoint(Ped player) {
@@ -83,47 +87,20 @@ void Features::explode_player(Ped player) {
 }
 
 void Features::apply_vehicle_mod(Vehicle veh, int modtype, int modindex) {
-	VEHICLE::SET_VEHICLE_MOD_KIT(veh, 0);
+	VEHICLE::SET_VEHICLE_FIXED(veh);
+	VEHICLE::SET_VEHICLE_DEFORMATION_FIXED(veh);
+	VEHICLE::SET_VEHICLE_DIRT_LEVEL(veh, 0);
 	VEHICLE::SET_VEHICLE_MOD(veh, modtype, modindex, true);
 }
 
-void Features::money_bank() {
-	notifyAboveMap("~HUD_COLOR_GREEN~Banked money gived");
-	NETWORKCASH::NETWORK_EARN_FROM_ROCKSTAR(10000000);
+void Features::nineM_drop() {
+	int transactionCode = 1982688246;// 90 M $	
+	int cash_to_receive = 90000000;
+	bool toBank = true;
+	Any transactionID = INT_MAX;
+	if (UNK3::_NETWORK_SHOP_BEGIN_SERVICE(&transactionID, 1474183246, transactionCode, 1445302971, cash_to_receive, toBank ? 4 : 1))
+		UNK3::_NETWORK_SHOP_CHECKOUT_START(transactionID);
 }
-
-void Features::money_ammo(Ped player, bool toggle) {
-	if (ENTITY::DOES_ENTITY_EXIST(player) && toggle) {
-		if (PED::IS_PED_SHOOTING(player)) {
-			float Tmp[6];
-			WEAPON::GET_PED_LAST_WEAPON_IMPACT_COORD(player, (Vector3*)Tmp);
-			if (Tmp[0] != 0 || Tmp[2] != 0 || Tmp[4] != 0) {
-				STREAMING::REQUEST_MODEL($("prop_gold_bar"));
-				while (!STREAMING::HAS_MODEL_LOADED($("prop_gold_bar")))WAIT(0); {
-					OBJECT::CREATE_AMBIENT_PICKUP($("PICKUP_MONEY_MED_BAG"), Tmp[0], Tmp[2], Tmp[4], 0, 5000, $("prop_gold_bar"), FALSE, TRUE);
-					STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED($("prop_gold_bar")); }
-			}
-		}
-	}
-}
-
-void Features::weapon_damage_modifier(Player player, bool toggle) {
-	if (ENTITY::DOES_ENTITY_EXIST(player) && toggle) 
-		PLAYER::SET_PLAYER_WEAPON_DAMAGE_MODIFIER(player, 999999999999.9f);
-	else if (ENTITY::DOES_ENTITY_EXIST(player) && !toggle)
-		PLAYER::SET_PLAYER_WEAPON_DAMAGE_MODIFIER(player, 1.0f);
-}
-
-void Features::money_drop(Ped player, int amount) {
-	if (ENTITY::DOES_ENTITY_EXIST(player)) {
-		Vector3 coords = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player, 0.0f, 0.0f, 1.25f);
-
-		STREAMING::REQUEST_MODEL($("prop_money_bag_01"));
-		while (!STREAMING::HAS_MODEL_LOADED($("prop_money_bag_01")))WAIT(0); {
-			OBJECT::CREATE_AMBIENT_PICKUP($("PICKUP_MONEY_MED_BAG"), coords.x, coords.y, coords.z, 0, amount, $("prop_money_bag_01"), FALSE, TRUE);
-			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED($("prop_money_bag_01")); }
-		}
-	}
 
 void Features::color_loop(Vehicle VehicleHandle, bool toggle) {
 	if (toggle) {
@@ -211,64 +188,6 @@ void Features::Max_veh(Vehicle VehicleHandle) {
 	
 }
 
-void Features::spawn_vehicle_model(uint model, bool teleport, bool maxed) {
-
-	STREAMING::REQUEST_MODEL(model);
-	DWORD now = GetTickCount();
-	while (!STREAMING::HAS_MODEL_LOADED(model) && GetTickCount() < now + 5000)
-	{
-		WAIT(0);
-	}
-
-	if (!STREAMING::HAS_MODEL_LOADED(model))
-	{
-		notifyAboveMap("Failed to load vehicle model, request timed out");
-		return;
-	}
-
-	auto VehicleHandle = do_spawn_vehicle(model, teleport, maxed);
-	if (VehicleHandle)
-	{
-		notifyAboveMap("Vehicle spawned");
-		if (maxed)
-			Max_veh(VehicleHandle);
-		STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(model);
-		ENTITY::SET_VEHICLE_AS_NO_LONGER_NEEDED(&VehicleHandle);
-
-		return;
-	}
-}
-
-Vehicle Features::do_spawn_vehicle(uint model, bool teleport, bool maxed)
-{
-	auto heading = ENTITY::GET_ENTITY_HEADING(PLAYER::PLAYER_PED_ID());
-	auto coords = ENTITY::GET_ENTITY_COORDS(PLAYER::PLAYER_PED_ID(), 0);
-
-	float forward = 5.f;
-	float xVect = forward * sin(degToRad(heading)) * -1.0f;
-	float yVect = forward * cos(degToRad(heading));
-	BOOL isAircraft = VEHICLE::IS_THIS_MODEL_A_HELI(model) || VEHICLE::IS_THIS_MODEL_A_PLANE(model);
-
-	Vehicle vehicle = NULL;
-	if (isAircraft && teleport)
-	{
-		vehicle = VEHICLE::CREATE_VEHICLE(model, coords.x + xVect, coords.y + yVect, coords.z + 1000, heading, TRUE, TRUE);
-		VEHICLE::SET_VEHICLE_FORWARD_SPEED(vehicle, 500.0f);
-		VEHICLE::SET_HELI_BLADES_FULL_SPEED(vehicle);
-	}
-	else
-	{
-		vehicle = VEHICLE::CREATE_VEHICLE(model, coords.x + xVect, coords.y + yVect, coords.z, heading, TRUE, TRUE);
-		VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(vehicle);
-	}
-
-	DECORATOR::DECOR_SET_INT(vehicle, "MPBitset", 0);
-
-	if (teleport) PED::SET_PED_INTO_VEHICLE(PLAYER::PLAYER_PED_ID(), vehicle, -1);
-
-	return vehicle;
-}
-
 void Features::no_ragdoll(bool toggle, Player player, Ped player_ped) {
 	PED::SET_PED_CAN_RAGDOLL(player_ped, !toggle);
 	PED::SET_PED_CAN_RAGDOLL_FROM_PLAYER_IMPACT(player_ped, !toggle);
@@ -277,8 +196,8 @@ void Features::no_ragdoll(bool toggle, Player player, Ped player_ped) {
 	PED::SET_PED_RAGDOLL_ON_COLLISION(player_ped, !toggle);
 }
 
-void Features::toggle_GodMod(bool toggle, Player player) {
-	PLAYER::SET_PLAYER_INVINCIBLE(player, toggle);
+void Features::toggle_GodMod(bool toggle, Ped player) {
+	ENTITY::SET_ENTITY_INVINCIBLE(player, toggle);
 }
 
 void Features::toggle_Invisibility(bool toggle, Entity player) {
@@ -331,28 +250,6 @@ void Features::set_light_multiplier(Vehicle veh, float multiplier) {
 void Features::set_plate_type(Vehicle veh, int index) {
 	if (ENTITY::IS_ENTITY_A_VEHICLE(veh))
 		VEHICLE::SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(veh, index);
-}
-
-void Features::no_reload(Ped player, bool toggle) {
-	if (!toggle && !PED::IS_PED_A_PLAYER(player))
-		return;
-
-	static Hash currentWeapon;
-	if (WEAPON::GET_CURRENT_PED_WEAPON(player, &currentWeapon, 1))
-	{
-		if (WEAPON::IS_WEAPON_VALID(currentWeapon))
-		{
-			int maxAmmo;
-			if (WEAPON::GET_MAX_AMMO(player, currentWeapon, &maxAmmo))
-			{
-				WEAPON::SET_PED_AMMO(player, currentWeapon, maxAmmo);
-
-				maxAmmo = WEAPON::GET_MAX_AMMO_IN_CLIP(player, currentWeapon, 1);
-				if (maxAmmo > 0)
-					WEAPON::SET_AMMO_IN_CLIP(player, currentWeapon, maxAmmo);
-			}
-		}
-	}
 }
 
 void Features::give_weap(Ped player) {
